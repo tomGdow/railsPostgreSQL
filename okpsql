@@ -1,0 +1,147 @@
+#!/bin/bash
+
+usage () {
+cat <<END
+NAME
+       $(basename $0)
+
+       This program checks PostgreSQL login credentials as a 
+       prerequesite to creating a Ruby-on-Rails App with PostgreSQL as database. 
+
+SYNOPSIS
+       $(basename $0) [-h] [<POSTGRES_ENV_VAR>]
+
+DESCRIPTION
+
+
+
+OPTIONS 
+       -h: get help
+
+REQUIREMENTS
+       (1) A Unix/Ubuntu operating system with both PostgreSQL and the
+       'pg' gem installed.
+       (2) A PostgreSQL role with the same username as the current
+       operating system username. That is, the PostgreSQL username 
+       and the result of the command '\$(whoami)' 
+       must be identical
+       (3) An ENV variable set equal to the current user's PostgreSQL
+       password
+       (4) Set up a postgres user with the same name as the current
+       unix/Ununtu login name
+       sudo -u postgres createuser -s <unix_ubuntu_username>
+       sudo -u postgres psql
+       \\password <unix_ubuntu_username>
+       (2) Set env variable. You may need to execute the following prior to running the program. 
+       POSTGRES_PASSWORD='my_postgres_password'
+       export POSTGRES_PASSWORD'
+       Or, include the following line in your .bashrc file:
+       export POSTGRES_PASSWORD='my_postgres_password'
+NOTES
+       (1) The default name for the ENV variable is POSTGRES_PASSWORD, 
+           and if this is used (recommended) the program may be executed
+           without any arguments.
+       (2) A valid PostgreSQL role may be checked  with:
+            echo \$(psql postgres -tAc "SELECT * FROM pg_roles WHERE rolname='\$(whoami)'")
+       (3) Successful login to PostgreSQL returns an exit code of 0 from the following command:
+             echo \$(psql -d postgres -c "\q" > /dev/null 2>&1; echo -n \$?)
+       (4) The psql login hash is given
+             echo -n  \${POSTGRES_PASSWORD}\$(whoami) | md5sum
+           where 'POSTGRES_PASSWORD' is the name of the ENV variable.
+           That is, by the md5-generated hash of "<postgres-pasword><postgres-username>"
+       (5) The psql hash must also be present in:
+             psql -d postgres -c 'select * from pg_shadow' |cut -d \| -f 7 |
+
+EXAMPLE USAGE
+       okpsql
+       okpsql "PSQL-ENV-VARIABLE"
+END
+}
+
+## Set options
+while getopts ":h" opt; do
+	case $opt in
+		h)
+			usage | less
+			exit 1
+			;;
+	esac
+done
+
+isPostgresInstalled () {
+	 psqlv="$(psql --version)"
+	 psqlgrep="$(echo ${psqlv} | grep -c '^psql')"
+
+	if [[ ${psqlgrep} -eq 1 ]]; then
+		echo "OK-PSQL  ${psqlv} detected"
+	else
+		echo "ERROR. No Version of PostgreSQL detected.  Check your system with 'psql --version'"
+		exit 1
+	fi
+}
+verifyLoggedinUserRole () {
+
+	user_role_status=$(psql postgres -tAc "SELECT 1 FROM pg_roles WHERE rolname='$(whoami)'")
+
+	if [[ ${user_role_status} == 1 ]];then
+		echo "OK-PSQL  PostgreSQL role $(whoami)"
+	else 
+		echo "ERROR: No PostgreSQL role for '$(whoami)'. Exiting."
+		echo "  type 'okpsql --help' for advise on how to create PostgreSQL role"
+		exit 1
+	fi
+}
+
+verifyPostgresLogin () {
+
+	declare connect_psq_status=$(psql -d postgres -c "\q" > /dev/null 2>&1; echo -n $?)
+
+	if [[ ${connect_psq_status} == 0 ]];then
+		echo "OK-PSQL  PostgreSQL connection"
+	else 
+		echo "ERROR. Cannot connect to PostgreSQL. Check user account status, and"
+		echo "check that the following command succeeds (returns '0') before continuing:"
+		echo '  echo $(psql -d postgres -c "\q" > /dev/null 2>&1; echo -n $?)'
+		exit 1
+	fi
+}
+
+verifyLoginWithEnvVariable () {
+
+	if [[ "${#}" -eq 0 ]]; then
+		 password_env_var_string="POSTGRES_PASSWORD"
+	else 
+		 password_env_var_string="${1}"
+	fi
+
+	 psql_password=$(env | grep ${password_env_var_string} | cut -d \= -f 2)
+	 md5_encrypted_psql_credentials=$(echo -n ${psql_password}$(whoami) |  md5sum)
+	 psql_login_status="$(psql  -d postgres -c 'select * from pg_shadow' |cut -d \| -f 7 | \
+		grep -c  ${md5_encrypted_psql_credentials})"
+
+	if [[ ${psql_login_status} -eq 1 ]]; then
+		echo "OK-PSQL  Env var ${password_env_var_string}. (hash: $(echo -n  ${md5_encrypted_psql_credentials} | cut -d \- -f 1))"
+	else
+		echo "ERROR: Cannot detect hashed credentials in pg_shadow. Check ENV variable set properly."
+		exit 1
+	fi
+}
+
+isPostgresGemInstalled () {
+	pg="$(gem list | grep  '^pg')"
+	gemcount=$(echo $pg | grep -cw '^pg')
+	#declare gemcount="${pg} | wc -l"  
+
+	if [[ ${gemcount} -eq 0 ]]; then
+		echo "PostgreSQL gem not detected in gem list. Make sure that 'gem install pg' succeeds before continuing"
+		exit 1
+	else
+		echo "OK-PSQL  Gem ${pg} detected"
+	fi
+}
+
+isPostgresInstalled && \
+	verifyLoggedinUserRole 2>/dev/null && \
+	verifyPostgresLogin 2>/dev/null && \
+	verifyLoginWithEnvVariable "${@}" && \
+	isPostgresGemInstalled 

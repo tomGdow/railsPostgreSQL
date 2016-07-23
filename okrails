@@ -1,0 +1,33 @@
+#!/bin/bash
+
+## Functions
+
+isRubyInstalled () {
+	declare rubyv="$(ruby --version)"
+	declare rubygrep="$(echo ${rubyv} | grep -ci '^ruby')"
+
+	if [[ ${rubygrep} -eq 1 ]]; then
+		echo "OK-RUBY ${rubyv} "
+	else
+		echo "No version of Ruby detected. Check your system with 'ruby --version'"
+		exit 1
+	fi
+}
+
+isRailsInstalled () {
+	declare railsv="$(rails -v)"
+	declare railsgrep="$(echo ${railsv} | grep -c '^Rails')"
+
+	if [[ ${railsgrep} -eq 1 ]]; then
+		echo "OK-RAILS ${railsv}"
+	else
+		echo "No version of Rails detected. Check your system with 'rails -v'"
+		exit 1
+	fi
+}
+
+init () {
+	isRubyInstalled 
+	isRailsInstalled 
+}
+
