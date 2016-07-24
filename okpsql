@@ -78,7 +78,7 @@ isPostgresInstalled () {
 		echo "ERROR. No Version of PostgreSQL detected.  Check your system with 'psql --version'"
 		exit 1
 	fi
-}
+} >&2
 
 verifyPostgresRole () {
 
@@ -143,9 +143,9 @@ It is recommended that you ensure 'gem install pg' succeeds before continuing"
 init () {
 
 	isPostgresInstalled
-	verifyPostgresRole 2>/dev/null 
-	verifyPostgresConnect 2>/dev/null 
-	verifyPostgresLogin "${@}"
+	verifyPostgresRole 
+	verifyPostgresConnect 
+	verifyPostgresLogin "${@}" 
 	checkPostgresGem 
 
 }
