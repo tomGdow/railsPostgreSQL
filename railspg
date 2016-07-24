@@ -4,10 +4,16 @@ DIR="${BASH_SOURCE%/*}"
 
 if [[ ! -d "$DIR" ]]; then DIR="$PWD"; fi
 . "$DIR/okrails"
+. "$DIR/okpsql"
 
 # Functions
 init () {
+	isPostgresInstalled
+	verifyPostgresRole 2>/dev/null 
+	verifyPostgresConnect 2>/dev/null 
+	verifyPostgresLogin "${@}"
+	checkPostgresGem 
 	isRubyInstalled
-	isRailsInstalled
+	isRailsInstalled 2>/dev/null 
 }
 init
