@@ -73,3 +73,88 @@ checkPostgresGem () {
     echo "OK-PSQL  Gem ${pg} detected"
   fi
 } 2>/dev/null
+
+
+
+usage () {
+cat <<END
+NAME
+       $(basename $0)
+
+       This script contains the following bash programs
+
+       (1) isProgramInstalled
+       (2) verifyPostgresRole
+       (3) verifyPostgresConnect
+       (4) verifyPostgresLogin 
+       (5) checkPostgresGem
+
+SYNOPSIS
+       $(basename $0) [-h] 
+
+DESCRIPTION
+
+       (1) isProgramInstalled
+           Checks if a program is installed on user OS
+
+       (2) verifyPostgresRole
+           Checks if a PostgreSQL role exits for the logged-in user.
+           Essentially, the script checks if the following command
+           returns '1':
+
+           echo \$(psql postgres -tAc "SELECT 1 FROM pg_roles WHERE
+           rolname='\$(whoami)'") 
+
+       (3) verifyPostgresConnect
+           Checks connectivity to PostgreSQL
+           Essentially, the script checks the exit status of the 
+           following command, where '0' is deemed  a successful 
+           connection:
+
+           echo \$(psql -d postgres -c "\\q" > /dev/null 2>&1; echo -n \$?)
+
+       (4) verifyPostgresLogin 
+           PostgreSQL uses md5-encryption and the password hash may
+           be obtained as follows, where 'psql_password' is the user's
+           PostgreSQL password:
+
+           hashed_password=\$(echo -n \${psql_password}\$(whoami) | 
+           md5sum); echo \$hashed_password
+           
+           Essentially, the program checks if this hashed_password 
+           is present in the view 'pg_shadow' as follows:
+
+           echo \$(psql  -d postgres -c 'select * from pg_shadow' |
+           cut -d \| -f 7 | grep -c  \${hashed_password})
+           
+           The script takes a single optional argument, the name of
+           the ENV variable holding the user's PostgreSQL password.
+           If no argument is supplied, this is assumed to be 
+           'POSTGRES_PASSWORD'
+
+       (5) checkPostgresGem
+           checks if the PostgreSQL gem is installed. 
+
+OPTIONS 
+       -h: get help
+
+EXAMPLE USAGE
+       (1) isProgramInstalled  "psql"
+       (2) verifyPostgresRole 
+       (3) verifyPostgresConnect 
+       (4) verifyPostgresLogin
+           verifyPostgresLogin "PGPASS" # 'PGPASS is ENV variable
+       (5) checkPostgresGem 
+END
+}
+
+## Set options
+while getopts ":h" opt; do
+	case $opt in
+		h)
+			usage | less
+			exit 1
+			;;
+	esac
+done
+
