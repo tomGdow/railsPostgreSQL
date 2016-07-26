@@ -57,7 +57,6 @@ verifyPostgresLogin () {
   else
     echo "ERROR: Cannot detect hashed credentials in pg_shadow.\
       Check ENV variable set properly."
-    exit 1
   fi
 } 2>/dev/null
 
