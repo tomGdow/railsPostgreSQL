@@ -138,13 +138,23 @@ DESCRIPTION
 OPTIONS 
        -h: get help
 
-EXAMPLE USAGE
+EXAMPLE USAGE (1)
        (1) isProgramInstalled  "psql"
        (2) verifyPostgresRole 
        (3) verifyPostgresConnect 
        (4) verifyPostgresLogin
-           verifyPostgresLogin "PGPASS" # 'PGPASS is ENV variable
+           verifyPostgresLogin "PGPASS" # 'PGPASS' is ENV variable
        (5) checkPostgresGem 
+
+EXAMPLE USAGE (2)
+       From command line:
+       (1) . railsPsqlFns isProgramInstalled "rails"
+       (2) . railsPsqlFns verifyPostgresRole
+       (3) . railsPsqlFns verifyPostgresConnect
+       (4) . railsPsqlFns verifyPostgresLogin
+       (5) . railsPsqlFns checkPostgresGem
+       (alt) bash railsPsqlFns isProgramInstalled "rails"
+
 END
 }
 
@@ -158,3 +168,4 @@ while getopts ":h" opt; do
 	esac
 done
 
+"$@"
