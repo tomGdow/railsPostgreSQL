@@ -1,33 +1,59 @@
 #!/bin/bash
+DIR="${BASH_SOURCE%/*}"
 
-## Functions
+if [[ ! -d "$DIR" ]]; then DIR="$PWD"; fi
+. "$DIR/railsPsqlFns"
 
-isRubyInstalled () {
-	declare rubyv="$(ruby --version)"
-	declare rubygrep="$(echo ${rubyv} | grep -ci '^ruby')"
+usage () {
+cat <<END
+NAME
+       $(basename $0)
 
-	if [[ ${rubygrep} -eq 1 ]]; then
-		echo "OK-RUBY ${rubyv} "
-	else
-		echo "No version of Ruby detected. Check your system with 'ruby --version'"
-		exit 1
-	fi
+       This program checks if Ruby, Ruby-on-Rails and NodeJS are
+       installed on the user OS.
+
+SYNOPSIS
+       $(basename $0) [-h]
+
+OPTIONS 
+       -h: get help
+
+REQUIREMENTS (Script)
+       'okrails' requires the script 'railsPsqlFns', which should be in the same 
+       directory as 'okpsql'. Both scrips should be on the user's path.
+
+       It may be necessary to change user permissions. For example:
+
+       chmod u+x "${HOME}/bin/okpsql"
+       chmod u+x "${HOME}/bin/railsPsqlFns"
+
+       It is recommended that the scripts are located in \$HOME/bin,
+       or that softlinks are created from this directory to both filles. 
+       
+       For the last possibility, you may wish to execute the following from
+       within \${HOME}/bin: 
+
+       ln -s /path/to/okpsql okrails
+       ln -s /path/to/railsPsqlFns railsPsqlFns
+
+EXAMPLE USAGE
+       okpsql
+       okpsql "PSQL-ENV-VARIABLE"
+END
 }
 
-isRailsInstalled () {
-	declare railsv="$(rails -v)"
-	declare railsgrep="$(echo ${railsv} | grep -c '^Rails')"
-
-	if [[ ${railsgrep} -eq 1 ]]; then
-		echo "OK-RAILS ${railsv}"
-	else
-		echo "No version of Rails detected. Check your system with 'rails -v'"
-		exit 1
-	fi
-}
-
+## Set options
+while getopts ":h" opt; do
+	case $opt in
+		h)
+			usage | less
+			exit 1
+			;;
+	esac
+done
 init () {
-	isRubyInstalled 
-	isRailsInstalled 
-}
-
+	for var in "node" "ruby" "rails"; do
+		isProgramInstalled "${var}"
+	done
+} 
+init

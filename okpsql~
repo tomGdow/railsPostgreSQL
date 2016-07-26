@@ -1,0 +1,101 @@
+#!/bin/bash 
+
+DIR="${BASH_SOURCE%/*}"
+
+if [[ ! -d "$DIR" ]]; then DIR="$PWD"; fi
+. "$DIR/railsPsqlFns"
+
+usage () {
+cat <<END
+NAME
+       $(basename $0)
+
+       This program checks if PostgreSQL is properly configured as a
+       prerequesite to creating a Ruby-on-Rails App with PostgreSQL
+       as database. 
+
+SYNOPSIS
+       $(basename $0) [-h] [<POSTGRES_ENV_VAR>]
+
+DESCRIPTION
+
+       This script checks if:
+
+       (1) Postgres is installed 
+       (2) a postgreSQL role exists for the logged-in user
+       (3) a connection can be made to postgresQL
+       (4) the logged in user can log into postgreSQL using the 
+           password stored in an ENV variable. By default, this
+           ENV variable is called  POSTGRES_PASSWORD 
+       (5) the postgres gem is installed.  
+ 
+       Number (5) is not essential, but is recommended.
+
+OPTIONS 
+  
+       -h: get help
+
+REQUIREMENTS
+
+       (1) A PostgreSQL role with the same username as the current
+       operating system username. That is, the PostgreSQL username 
+       and the result of the command '\$(whoami)' 
+       must be identical.
+       You may wish to create a role as follows, where '<username>'
+       it that given by \${whoami}:
+
+       sudo -u postgres createuser -s <username>
+       sudo -u postgres psql
+       \\password <username>
+
+       (3) An ENV variable set equal to the current user's PostgreSQL
+       password
+       (4) Set up a postgres user with the same name as the current
+       unix/Ununtu login name
+       (2) Set env variable. You may need to execute the following prior to running the program. 
+       POSTGRES_PASSWORD='my_postgres_password'
+       export POSTGRES_PASSWORD'
+       Or, include the following line in your .bashrc file:
+       export POSTGRES_PASSWORD='my_postgres_password'
+NOTES
+       (1) The default name for the ENV variable is POSTGRES_PASSWORD, 
+           and if this is used (recommended) the program may be executed
+           without any arguments.
+       (2) A valid PostgreSQL role may be checked  with:
+            echo \$(psql postgres -tAc "SELECT * FROM pg_roles WHERE rolname='\$(whoami)'")
+       (3) Successful login to PostgreSQL returns an exit code of 0 from the following command:
+             echo \$(psql -d postgres -c "\q" > /dev/null 2>&1; echo -n \$?)
+       (4) The psql login hash is given
+             echo -n  \${POSTGRES_PASSWORD}\$(whoami) | md5sum
+           where 'POSTGRES_PASSWORD' is the name of the ENV variable.
+           That is, by the md5-generated hash of "<postgres-pasword><postgres-username>"
+       (5) The psql hash must also be present in:
+             psql -d postgres -c 'select * from pg_shadow' |cut -d \| -f 7 |
+
+EXAMPLE USAGE
+       okpsql
+       okpsql "PSQL-ENV-VARIABLE"
+END
+}
+
+## Set options
+while getopts ":h" opt; do
+	case $opt in
+		h)
+			usage | less
+			exit 1
+			;;
+	esac
+done
+
+init () {
+
+  isProgramInstalled  "psql"
+	verifyPostgresRole 
+	verifyPostgresConnect 
+	verifyPostgresLogin "${@}" 
+	checkPostgresGem 
+
+} 2>/dev/null
+
+init

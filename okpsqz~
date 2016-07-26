@@ -35,7 +35,7 @@ OPTIONS
   
        -h: get help
 
-REQUIREMENTS (Tests)
+REQUIREMENTS
 
        For all tests to be successful, the user OS must have the 
        followiing properties:
@@ -64,24 +64,7 @@ REQUIREMENTS (Tests)
        export POSTGRES_PASSWORD'
        Or, include the following line in your .bashrc file:
        export POSTGRES_PASSWORD='my_postgres_password'
-
-REQUIREMENTS (Script)
-       'okpsql' requires the script 'railsPsqlFns', which should be in the same 
-       directory as 'okpsql'. Both scrips should be on the user's path.
-
-       It may be necessary to change user permissions. For example:
-
-       chmod u+x "${HOME}/bin/okpsql"
-       chmod u+x "${HOME}/bin/railsPsqlFns"
-
-       It is recommended that the scripts are located in \$HOME/bin,
-       or that softlinks are created from this directory to both filles. 
-       
-       For the last possibility, you may wish to execute the following from
-       within \${HOME}/bin: 
-
-       ln -s /path/to/okpsql okpsql
-       ln -s /path/to/railsPsqlFns railsPsqlFns
+NOTES
 
 EXAMPLE USAGE
        okpsql

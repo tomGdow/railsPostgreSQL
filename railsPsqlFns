@@ -1,0 +1,76 @@
+#!/bin/bash
+
+isProgramInstalled () {
+  declare prog_version=$("${1}" --version) 
+  if [[ -z "${prog_version// }" ]]; then
+    echo "No version of ${1^} detected. Check your system with '${1} --version'"
+  else
+    echo "OK-${1^^}  ${prog_version}"
+  fi
+} 2>/dev/null
+
+verifyPostgresRole () {
+
+  user_role_status=$(psql postgres -tAc "SELECT 1 FROM pg_roles WHERE rolname='$(whoami)'")
+
+  if [[ ${user_role_status} == 1 ]];then
+    echo "OK-PSQL  PostgreSQL role $(whoami)"
+  else 
+    echo "ERROR No PostgreSQL role for '$(whoami)'"
+    echo "  type 'okpsql --help' for advise on how to create PostgreSQL role"
+  fi
+} 2>/dev/null
+
+verifyPostgresConnect () {
+
+  declare connect_psq_status=$(psql -d postgres -c "\q" > /dev/null 2>&1; echo -n $?)
+
+  if [[ ${connect_psq_status} == 0 ]];then
+    echo "OK-PSQL  PostgreSQL connection"
+  else 
+    echo "ERROR. Cannot connect to PostgreSQL. Check user account status, and"
+    echo "check that the following command succeeds (returns '0') before continuing:"
+    echo '  echo $(psql -d postgres -c "\q" > /dev/null 2>&1; echo -n $?)'
+    exit 1
+  fi
+} 2>/dev/null
+
+verifyPostgresLogin () {
+
+  if [[ "${#}" -eq 0 ]]; then
+    password_env_var_string="POSTGRES_PASSWORD"
+  else 
+    password_env_var_string="${1}"
+  fi
+
+  psql_password=$(env | grep ${password_env_var_string} \
+    | cut -d \= -f 2)
+  md5_encrypted_psql_credentials=$(echo -n ${psql_password}$(whoami)\
+    |  md5sum)
+  psql_login_status="$(psql  -d postgres -c 'select * from pg_shadow'\
+    |cut -d \| -f 7 | \
+    grep -c  ${md5_encrypted_psql_credentials})"
+
+  if [[ ${psql_login_status} -eq 1 ]]; then
+    echo "OK-PSQL  Env var ${password_env_var_string}. \
+(hash: $(echo -n  ${md5_encrypted_psql_credentials} | cut -d \- -f 1))"
+  else
+    echo "ERROR: Cannot detect hashed credentials in pg_shadow.\
+      Check ENV variable set properly."
+    exit 1
+  fi
+} 2>/dev/null
+
+checkPostgresGem () {
+  pg="$(gem list | grep  '^pg')"
+  gemcount=$(echo $pg | grep -cw '^pg')
+  #declare gemcount="${pg} | wc -l"  
+
+  if [[ ${gemcount} -eq 0 ]]; then
+    echo -e "WARNING-PSQL: PostgreSQL gem not detected in gem list.\n \
+      It is recommended that you ensure 'gem install pg' succeeds before\
+      continuing"
+  else
+    echo "OK-PSQL  Gem ${pg} detected"
+  fi
+} 2>/dev/null
