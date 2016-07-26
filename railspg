@@ -7,6 +7,38 @@ if [[ ! -d "$DIR" ]]; then DIR="$PWD"; fi
 . "$DIR/okpsql"
 
 # Functions
+usage () {
+cat <<END
+NAME
+       $(basename $0)
+
+
+SYNOPSIS
+       $(basename $0) [-h] [<password ENV variable name>]
+
+DESCRIPTION
+
+
+OPTIONS 
+  
+       -h: get help
+
+REQUIREMENTS (Tests)
+
+REQUIREMENTS (Script)
+
+END
+}
+
+## Set options
+while getopts ":h" opt; do
+	case $opt in
+		h)
+			usage | less
+			exit 1
+			;;
+	esac
+done
 init () {
 	isPostgresInstalled
 	verifyPostgresRole 2>/dev/null 

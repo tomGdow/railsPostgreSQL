@@ -19,8 +19,9 @@ OPTIONS
        -h: get help
 
 REQUIREMENTS (Script)
-       'okrails' requires the script 'railsPsqlFns', which should be in the same 
-       directory as 'okpsql'. Both scrips should be on the user's path.
+       'okrails' requires the script 'railsPsqlFns', which should be
+       in the same directory as 'okpsql'. Both scrips should be on
+       the user's path.
 
        It may be necessary to change user permissions. For example:
 
@@ -30,8 +31,8 @@ REQUIREMENTS (Script)
        It is recommended that the scripts are located in \$HOME/bin,
        or that softlinks are created from this directory to both filles. 
        
-       For the last possibility, you may wish to execute the following from
-       within \${HOME}/bin: 
+       For the last possibility, you may wish to execute the following
+       from within \${HOME}/bin: 
 
        ln -s /path/to/okpsql okrails
        ln -s /path/to/railsPsqlFns railsPsqlFns
@@ -52,7 +53,7 @@ while getopts ":h" opt; do
 	esac
 done
 init () {
-	for var in "node" "ruby" "rails"; do
+	for var in "nodejs" "ruby" "rails"; do
 		isProgramInstalled "${var}"
 	done
 } 
