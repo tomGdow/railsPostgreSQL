@@ -3,21 +3,18 @@
 DIR="${BASH_SOURCE%/*}"
 
 if [[ ! -d "$DIR" ]]; then DIR="$PWD"; fi
-. "$DIR/okrails"
-. "$DIR/okpsql"
-
+. "$DIR/railsPsqlFns"
 # Functions
+
 usage () {
 cat <<END
 NAME
        $(basename $0)
 
-
 SYNOPSIS
        $(basename $0) [-h] [<password ENV variable name>]
 
 DESCRIPTION
-
 
 OPTIONS 
   
@@ -39,11 +36,63 @@ while getopts ":h" opt; do
 			;;
 	esac
 done
-init () {
-	isPostgresInstalled
-	verifyPostgresLogin "${@}"
-	checkPostgresGem 
-	isRubyInstalled
-	isRailsInstalled 2>/dev/null 
+shift $(( ${OPTIND} - 1 ))
+
+checkArgs () {
+
+	if [[ $1 != new ]]; then
+		echo "The first compulsory argument must be the keyword 'new'"
+		exit 1
+	fi
+
+	if [[ $# != 2 ]]; then
+		echo "Argument error.Two compulsory arguments required, ${#} detected"
+		exit 1
+	fi
 }
-init
+
+doesProjectExist () {
+
+	declare project_name="$(ls | grep -c ^${1}$)"
+	if [[ ${project_name} -ne 0 ]]; then
+		echo "The project name ${1} already exists"
+	fi
+}
+
+doDatabasesExist () {
+  declare devexists="$(psql -lqt | cut -d \| -f 1 | grep -w ${1}_development | wc -l)"
+  declare prodexists="$(psql -lqt | cut -d \| -f 1 | grep -w ${1}_production | wc -l)"
+  declare testexists="$(psql -lqt | cut -d \| -f 1 | grep -w ${1}_test | wc -l)"
+  declare psql_password=$(env | grep $password_env_var_string  | cut -d \= -f 2)
+
+	if [[ ${devexists} == 1 || ${prodexists} == 1 || ${testexists} == 1 ]]; then
+		if [[ ${devexists} == 1 ]]; then
+			echo "Database ${1}_development already exists" 
+		fi
+		if [[ ${testexists} == 1 ]]; then
+			echo "Database ${1}_test already exists" 
+		fi
+		if [[ ${prodexists} == 1 ]]; then
+			echo "Database ${1}_production already exists" 
+		fi
+		echo "railspg -h for help"
+		exit 1
+	fi
+}
+
+# Do databases already exist?
+init () {
+
+  checkArgs "${@}"
+  isProgramInstalled  "psql"
+	verifyPostgresRole 
+	verifyPostgresConnect 
+	verifyPostgresLogin "${@}" 
+	checkPostgresGem 
+	for var in "nodejs" "ruby" "rails"; do
+		isProgramInstalled "${var}"
+	done
+  doesProjectExist "${2}" 
+}
+
+init "${@}"

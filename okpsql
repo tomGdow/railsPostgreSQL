@@ -100,13 +100,12 @@ while getopts ":h" opt; do
 done
 
 init () {
-
   isProgramInstalled  "psql"
 	verifyPostgresRole 
 	verifyPostgresConnect 
-	verifyPostgresLogin "${@}" 
+	verifyPostgresLogin "${1}" 
 	checkPostgresGem 
 
 } 2>/dev/null
 
-init
+init "${1}"

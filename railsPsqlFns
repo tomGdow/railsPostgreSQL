@@ -20,7 +20,6 @@ verifyPostgresRole () {
     echo "  type 'okpsql --help' for advise on how to create PostgreSQL role"
   fi
 } 2>/dev/null
-
 verifyPostgresConnect () {
 
   declare connect_psq_status=$(psql -d postgres -c "\q" > /dev/null 2>&1; echo -n $?)
@@ -36,27 +35,28 @@ verifyPostgresConnect () {
 } 2>/dev/null
 
 verifyPostgresLogin () {
-
-  if [[ "${#}" -eq 0 ]]; then
+  a=${1}
+  if [[ "${#a}" -eq 0 ]]; then
     password_env_var_string="POSTGRES_PASSWORD"
   else 
     password_env_var_string="${1}"
   fi
 
-  psql_password=$(env | grep ${password_env_var_string} \
-    | cut -d \= -f 2)
-  md5_encrypted_psql_credentials=$(echo -n ${psql_password}$(whoami)\
-    |  md5sum)
-  psql_login_status="$(psql  -d postgres -c 'select * from pg_shadow'\
-    |cut -d \| -f 7 | \
-    grep -c  ${md5_encrypted_psql_credentials})"
+  encrypted_credentials=$(echo -n $(env | \
+    grep ${password_env_var_string}| \
+    cut -d \= -f 2)$(whoami) | \
+    md5sum)
+
+  psql_login_status="$(psql  -d postgres -c 'select * from pg_shadow' | \
+    cut -d \| -f 7 | \
+    grep -c  ${encrypted_credentials})"
 
   if [[ ${psql_login_status} -eq 1 ]]; then
     echo "OK-PSQL  Env var ${password_env_var_string}. \
-(hash: $(echo -n  ${md5_encrypted_psql_credentials} | cut -d \- -f 1))"
+(hash: $(echo -n  ${encrypted_credentials} | cut -d \- -f 1))"
   else
-    echo "ERROR: Cannot detect hashed credentials in pg_shadow.\
-      Check ENV variable set properly."
+    echo -e  "ERROR: Cannot detect hashed credentials in pg_shadow.\n\
+       Check ENV variable set properly."
   fi
 } 2>/dev/null
 
@@ -167,5 +167,4 @@ while getopts ":h" opt; do
 			;;
 	esac
 done
-
-"$@"
+"$@" 2>/dev/null
